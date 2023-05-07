@@ -33,6 +33,6 @@ plt.yticks(fontsize = 20)
 plt.xlabel('Date',fontsize = 20)
 plt.ylabel('Price',fontsize = 20)
 plt.plot(data.iloc[0:30]['Open'],label = 'Open') # Opening prices of first 30 days are plotted against date
-plt.plot(df.iloc[0:30]['Close'],label = 'Close') # Closing prices of first 30 days are plotted against date
+plt.plot(data.iloc[0:30]['Close'],label = 'Close') # Closing prices of first 30 days are plotted against date
 plt.legend(loc='upper left', frameon=False,framealpha=1,prop={'size': 22}) # Properties of legend box
 plt.show()
