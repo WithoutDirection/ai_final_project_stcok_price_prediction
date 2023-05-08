@@ -19,7 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from FinMind.data import DataLoader
 
 dl = DataLoader()
-data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2015-01-01')
+data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01', end_date ='2023-05-07')
 
 # 存成csv
 # 把日期設為index
@@ -28,8 +28,8 @@ data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2015-01-01')
 # 用train_test_split切分test&train data
 
 #visualize the data
-data_df.to_csv("tsmc_stock_from2015.csv")
-data1 = pd.read_csv("tsmc_stock_from2015.csv")
+data_df.to_csv("tsmc_stock_from2020.csv")
+data1 = pd.read_csv("tsmc_stock_from2020.csv")
 data1.set_index("date", inplace=True)
 """
 data1['close'].plot()
@@ -95,19 +95,3 @@ print('Accuracy:', round(accuracy, 2), '%.')
 # 印出20天後的台積電股價
 # 2023/5/9因為今天是5/8
 
-from datetime import datetime, timedelta
-start_date = datetime(2023, 5, 9)
-my_list = list(predict)
-dates = []
-i = 0
-while len(dates) < 529:
-    date = start_date + timedelta(days=i)
-    i+=1
-    if date.weekday() < 5:
-        dates.append(date)
-plt.title('Predict Pirce in next month')
-plt.xlabel('Date')
-date_strings = [d.strftime('%Y-%m-%d') for d in dates]
-plt.xticks(dates, date_strings, rotation=45)
-plt.plot(dates[:20], my_list[:20])
-plt.show()
