@@ -35,23 +35,25 @@ data1.set_index("date", inplace=True)
 #plt.ylabel("open price")
 #plt.show()
 data1.dropna(inplace = True)
-x = data1.iloc[:-1, 4:8]
+# x = data1.iloc[:-1][['open', 'max', 'min', 'close', 'Trading_turnover']]
+x = data1.iloc[:-1,4:8]
 print(x)
+print(type(x))
 y = data1.iloc[:, 4:8]
 y = y.shift(periods=-1)
 y = y[:-1] #向前移一個
 print(y)
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25,  random_state=0)
-scale = StandardScaler()
-x_train = scale.fit_transform(x_train)
-x_test = scale.transform(x_test)
+# scale = StandardScaler()
+# x_train = scale.fit_transform(x_train)
+# x_test = scale.transform(x_test)
 
 
 # 用RandomizedSearchCV做hyperparemeter tuning
 
 grid_rf = {
 'n_estimators': [20, 50, 100, 500, 1000],  
-'max_depth': np.arange(1, 15, 1),  
+'max_depth': np.arange(1, 10, 1),  
 'min_samples_split': [2, 10, 9], 
 'min_samples_leaf': np.arange(1, 15, 2, dtype=int),  
 'bootstrap': [True, False], 
@@ -89,7 +91,7 @@ print(round(accuracy, 2), '%.')
 
 # 嘗試從最近500天預測
 
-x_last500 = data1.iloc[-500:-1, 4:8]
+x_last500 = data1.iloc[-500:-1,4:8]
 y_last500 = data1.iloc[-500:, 4:8]
 y_last500 = y_last500.shift(periods = -1)
 y_last500 = y_last500[:-1]
@@ -98,9 +100,9 @@ print(x_last500)
 print('\n**check y_last500**')
 print(y_last500)
 
-###這個!!!
-x_last500 = scale.transform(x_last500) 
-###很重要!!!
+# ###這個!!!
+# x_last500 = scale.transform(x_last500) 
+# ###很重要!!!
 
 last500_predict = model.predict(x_last500)
 print('\n**check x_last500 precdict**\n')
@@ -112,36 +114,37 @@ print("Mean Absolute Error:", round(metrics.mean_absolute_error(y_last500, last5
 print("Mean Squared Error:", round(metrics.mean_squared_error(y_last500, last500_predict), 4))
 print("Root Mean Squared Error:", round(np.sqrt(metrics.mean_squared_error(y_last500, last500_predict)), 4))
 print("(R^2) Score:", round(metrics.r2_score(y_last500, last500_predict), 4))
-print(f'Test Score : {model.score(y_last500, last500_predict) * 100:.2f}% using Random Tree Regressor.???')
+print(f'Test Score : {model.score(x_last500, y_last500) * 100:.2f}% using Random Tree Regressor.???')
 errors = abs(y_last500-last500_predict)
 mape = 100 * (errors / y_last500)
 accuracy = 100 - np.mean(mape)
 print('Accuracy:')
 print(round(accuracy, 2), '%.')
 
-"""
+
 #只用昨天預測今天的
 n_day = 1
-x_last = data1.iloc[-(n_day+1):-1, 4:8]
-y_last = data1.iloc[-(n_day+1):, 4:8]
-y_last = y_last.shift(periods = -1)
-y_last = y_last[:-1]
+x_last = data1.iloc[-(n_day+1):-1,4:8]
 print('\n**check x_last**')
 print(x_last)
+y_last = data1.iloc[-(n_day+1):, 4:8]
+# print(y_last)
+y_last = y_last.shift(periods = -1)
+y_last = y_last[:-1]
 print('\n**check y_last**')
 print(y_last)
 
-###這個!!!
-x_last = scale.transform(x_last) 
-###很重要!!!
 
-last_predict = model.predict(x_last)
-print('\n**check x_last1 precdict**\n')
-print(last_predict)
+# ###這個!!!
+# x_last = scale.transform(x_last) 
+# ###很重要!!!
+# print(x_last)
+
+
+
 """
-
 #用5/12預測5/15、5/15預測5/16
-x_ = data1.iloc[-1:, 4:8]
+x_ = data1.iloc[-1:]
 #x_.style.format('{:.2f}')
 new_idx = pd.date_range(start='2023-05-15', end='2024-05-15', freq='B') #B:工作日
 x_ = x_.reindex(x_.index.union(new_idx))
@@ -152,13 +155,15 @@ for i in range(len(x_)-1):
     x_lastDay = x_.iloc[i:i+1, :]
     #print('x_lastDay:')
     #print(x_lastDay)
-    x_lastDay = scale.transform(x_lastDay) 
+    # x_lastDay = scale.transform(x_lastDay) 
     nextDay = model.predict(x_lastDay)
     #print('nextDay:')
     #print(nextDay)
     nextDay_series = pd.Series(nextDay[0], index=x_.columns)
     x_.iloc[i+1] = nextDay_series
 print(x_)
+
+"""
 
 #我怕是我亂打for所以一個一個做，但還是大失敗
 
@@ -174,7 +179,7 @@ print(x_)
 x_lastDay = x_.iloc[0:0+1, :]
 print('x_lastDay:')
 print(x_lastDay)
-x_lastDay = scale.transform(x_lastDay) 
+# x_lastDay = scale.transform(x_lastDay) 
 nextDay = model.predict(x_lastDay)
 print('nextDay:')
 print(nextDay)
@@ -185,7 +190,7 @@ print(x_)
 x_lastDay = x_.iloc[1:1+1, :]
 print('x_lastDay:')
 print(x_lastDay)
-x_lastDay = scale.transform(x_lastDay) 
+# x_lastDay = scale.transform(x_lastDay) 
 nextDay = model.predict(x_lastDay)
 print('nextDay:')
 print(nextDay)
@@ -196,7 +201,7 @@ print(x_)
 x_lastDay = x_.iloc[2:2+1, :]
 print('x_lastDay:')
 print(x_lastDay)
-x_lastDay = scale.transform(x_lastDay) 
+# x_lastDay = scale.transform(x_lastDay) 
 nextDay = model.predict(x_lastDay)
 print('nextDay:')
 print(nextDay)
