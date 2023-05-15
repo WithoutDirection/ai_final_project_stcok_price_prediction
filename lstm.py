@@ -75,7 +75,7 @@ for i in range(len(predictions)):
 rmse = math.sqrt((rmse/len(predictions)))
 print(rmse)
 
-# plot traing result
+# plot training result
 data = data_df.filter(['close'])
 train = data[:training_data_len]
 validation = data[training_data_len:]
