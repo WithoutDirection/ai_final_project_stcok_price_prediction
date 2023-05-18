@@ -131,4 +131,3 @@ if __name__ == "__main__":
   result = lstm.predict(14)
   print(result)
   
-#np.savetxt("prediction.csv", predictions, delimiter=",")
