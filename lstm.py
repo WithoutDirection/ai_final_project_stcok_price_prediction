@@ -64,11 +64,6 @@ class Lstm():
     self.model.fit(x_train, y_train, batch_size= 32, epochs=100)
     predictions = self.model.predict(x_test)
     predictions = self.scaler.inverse_transform(predictions)
-    rmse = 0.0
-    for i in range(len(predictions)):
-      rmse += (predictions[i]-y_test[i])**2
-    rmse = math.sqrt((rmse/len(predictions)))
-    print(rmse)
 
     data = data_df.filter(['close'])
     train = data[:training_data_len]
