@@ -13,6 +13,8 @@ from FinMind.data import DataLoader
 
 
 
+
+
 # split the data into a trainingdataset and testdataset in ratio of 67/33
 
 def loadDataset(filename, split, trainingSet=[], testSet=[], content_header=[]):
@@ -168,7 +170,7 @@ def main():
     # set data
     
     dl = DataLoader()
-    data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2022-01-01', end_date= '2022-12-31')
+    data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2000-01-01', end_date= '2022-12-31')
     data_df.to_csv("tsmc_stock_from2022.csv")
     data1 = pd.read_csv("tsmc_stock_from2022.csv")
     data1.set_index("date", inplace=True)
@@ -196,3 +198,9 @@ def main():
     # predictFor(5, 'yahoo.csv', 'YHOO', startdate, enddate, 1, split)
 
 main()
+
+line_up, = plt.plot([1,2,3], label='Line 2')
+line_down, = plt.plot([3,2,1], label='Line 1')
+plt.legend(handles=[line_up, line_down])
+
+plt.show()
