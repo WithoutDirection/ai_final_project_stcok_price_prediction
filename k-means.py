@@ -1,206 +1,145 @@
-import csv
-import random
-import math
-import operator
-
-import pandas_datareader.data as web
-import datetime
+from getData import getData
 import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
+from sklearn import neighbors
+import math
+from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score 
+from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance, accuracy_score
 
-import matplotlib.pyplot as plt   # Import matplotlib
-import json
-from FinMind.data import DataLoader
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+from itertools import cycle
 
+obj = getData
+data = obj.get_stock_data(obj, '2330', '2020-01-01', '2022-12-31')
 
+class KNN() :
+    def __init__(self,k = 15) :
+        self.data = data
+        self.K = k
+        self.df = None
+        self.stock = None
+        self.train_data = None
+        self.test_data = None
+        self.scaler = MinMaxScaler(feature_range=(0,1))
+        self.X_train = None
+        self.y_train = None
+        self.X_test = None
+        self.y_test = None
 
+    def extract(self, tagName = 'close'):
+        self.df = data[['date',tagName]]
+        # print("Shape of close dataframe:", self.df.shape)
 
-
-# split the data into a trainingdataset and testdataset in ratio of 67/33
-
-def loadDataset(filename, split, trainingSet=[], testSet=[], content_header=[]):
-    with open(filename, 'r') as csvfile:
-        # returns a reader object which will iterate over lines
-        lines = csv.reader(csvfile)
-        # dataset is a list of all data, where each item is a line as list
-        dataset = list(lines)
-        # minus 1 because we are predicting for next day
+    def normalize(self):
+        stock = self.df.copy()
+        self.stock = stock
+        del self.df['date']
+        self.df=self.scaler.fit_transform(np.array(self.df).reshape(-1,1))
         
-        for x in range(1,len(dataset) - 1):
-            # convert the content to float
-            # minus 1 because last is string for up or down
-            for y in range(1, len(content_header) - 1):
-                dataset[x][y] = float(dataset[x][y])
-            if random.random() < split:
-                trainingSet.append(dataset[x])
-            else:
-                testSet.append(dataset[x])
-
-
-
-def euclideanDistance(instance1, instance2, length):
-    distance = 0
-    for x in range(1, length):
-        distance += pow((instance1[x] - instance2[x]), 2)
-    return math.sqrt(distance)
-
-
-# get k nearest neighbors of the <array><num> testInstance among <array><array>
-# trainingSet
-def getNeighbors(trainingSet, testInstance, k):
-    distance = []
-    # minus 1 because we are splitting our data and test also has known class
-    length = len(testInstance) - 1
-
-    for x in range((len(trainingSet))):
-        dist = euclideanDistance(testInstance, trainingSet[x], length)
-        distance.append((trainingSet[x], dist))
-    
-    # sort based on the the item at index 1 i.e the distance
-    distance.sort(key=operator.itemgetter(1))
-    # for i in distance:
-    #     print(i)
-    neighbors = []
-    for x in range(k):
-        neighbors.append(distance[x][0])
+    def split(self, split = 0.8):
+        time_step = self.K
+        training_size=int(len(self.df)*split)
+        test_size=len(self.df)-training_size
+        self.train_data,self.test_data=self.df[0:training_size,:],self.df[training_size:len(self.df),:1]
+        # print("train_data: ", self.train_data.shape)
+        # print("test_data: ", self.test_data.shape)
         
-    for i in neighbors:
-        print(i)
-    return neighbors
+        def create_dataset(dataset):
+            dataX, dataY = [], []
+            for i in range(len(dataset)-time_step-1):
+                a = dataset[i:(i+time_step), 0]    
+                dataX.append(a)
+                dataY.append(dataset[i + time_step, 0])
+            return np.array(dataX), np.array(dataY)
+        
+        self.X_train, self.y_train = create_dataset(self.train_data)
+        self.X_test, self.y_test = create_dataset(self.test_data)
 
+        # print("X_train: ", self.X_train)
+        # print("y_train: ", self.y_train)
+        # print("X_test: ", self.X_test)
+        # print("y_test", self.y_test)
+        
+        
+    def predict(self):
+        neighbor = neighbors.KNeighborsRegressor(n_neighbors = self.K)
+        neighbor.fit(self.X_train, self.y_train)
+        train_predict=neighbor.predict(self.X_train)
+        test_predict=neighbor.predict(self.X_test)
 
-# make all responses vote their classification, the one with the highest vote wins
-def getResponse(neighbors):
-    classVotes = {}
-    for x in range(len(neighbors)):
-        response = neighbors[x][-1]
-        if response in classVotes:
-            classVotes[response] += 1
-        else:
-            classVotes[response] = 1
+        train_predict = train_predict.reshape(-1,1)
+        test_predict = test_predict.reshape(-1,1)
+
+        print("Train data prediction:", train_predict.shape)
+        print("Test data prediction:", test_predict.shape)
+        
+        def accuracy(train_predict, test_predict):
+            train_predict = self.scaler.inverse_transform(train_predict)
+            test_predict = self.scaler.inverse_transform(test_predict)
+            original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
+            original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
             
-    sortedVotes = sorted(classVotes.items(), key=operator.itemgetter(1), reverse=True)
-    return sortedVotes[0][0]
+            # Evaluation metrices RMSE and MAE
+            print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
+            print("Train data MSE: ", mean_squared_error(original_ytrain,train_predict))
+            print("Test data MAE: ", mean_absolute_error(original_ytrain,train_predict))
+            print("-------------------------------------------------------------------------------------")
+            print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest,test_predict)))
+            print("Test data MSE: ", mean_squared_error(original_ytest,test_predict))
+            print("Test data MAE: ", mean_absolute_error(original_ytest,test_predict))
+            
+            print("Train data explained variance regression score:", explained_variance_score(original_ytrain, train_predict))
+            print("Test data explained variance regression score:", explained_variance_score(original_ytest, test_predict))
+            
+            print("Train data R2 score:", r2_score(original_ytrain, train_predict))
+            print("Test data R2 score:", r2_score(original_ytest, test_predict))
+            
+            print("Train data MGD: ", mean_gamma_deviance(original_ytrain, train_predict))
+            print("Test data MGD: ", mean_gamma_deviance(original_ytest, test_predict))
+            print("----------------------------------------------------------------------")
+            print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
+            print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
+            return train_predict, test_predict
+        
+        train_predict, test_predict = accuracy(train_predict, test_predict)
+        look_back=self.K
+        trainPredictPlot = np.empty_like(self.df)
+        trainPredictPlot[:, :] = np.nan
+        trainPredictPlot[look_back:len(train_predict)+look_back, :] = train_predict
+        print("Train predicted data: ", trainPredictPlot.shape)
 
+        #shift test predictions for plotting
+        testPredictPlot = np.empty_like(self.df)
+        testPredictPlot[:, :] = np.nan
+        testPredictPlot[len(train_predict)+(look_back*2)+1:len(self.df)-1, :] = test_predict
+        print("Test predicted data: ", testPredictPlot.shape)
 
-def getAccuracy(testSet, predictions):
-    correct = 0
-    for x in range(len(testSet)):
-        if testSet[x][-1] == predictions[x]:
-            correct += 1
-    return (correct/float(len(testSet))) * 100.0
+        names = cycle(['Original close price','Train predicted close price','Test predicted close price'])
 
+        plotdf = pd.DataFrame({'date': self.stock['date'],
+                       'original_close': self.stock['close'],
+                      'train_predicted_close': trainPredictPlot.reshape(1,-1)[0].tolist(),
+                      'test_predicted_close': testPredictPlot.reshape(1,-1)[0].tolist()})
 
-def getAccuracy1(testSet, predictions):
-    correct = 0
-    for x in range(len(testSet)):
-        if RMSD(testSet[x][-1], predictions[x]) < 1:
-            correct += 1
-    return (correct/float(len(testSet))) * 100.0
+        fig = px.line(plotdf,x=plotdf['date'], y=[plotdf['original_close'],plotdf['train_predicted_close'],
+                                          plotdf['test_predicted_close']],
+              labels={'value':'Stock price','date': 'Date'})
+        fig.update_layout(title_text='Comparision between original close price vs predicted close price',
+                  plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Close Price')
+        fig.for_each_trace(lambda t:  t.update(name = next(names)))
 
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        fig.show()
+       
+       
+       
+k_means = KNN(15)
+k_means.extract('close')
+k_means.normalize()
+k_means.split(0.65)
+k_means.predict()
 
-def RMSD(X, Y):
-    return math.sqrt(pow(Y - X, 2))
-
-
-
-def predictFor(k, filename, stockname, split):
-    iv = ["date", "open", "max", "min", "close"]
-    trainingSet = []
-    testSet = []
-    totalCount = 0
-
-    # open the file
-    loadDataset(filename, split, trainingSet, testSet, iv)
-
-    print("Predicting for ", stockname)
-    print("Train: " + repr(len(trainingSet)))
-    print("Test: " + repr(len(testSet)))
-    totalCount += len(trainingSet) + len(testSet)
-    print("Total: " + repr(totalCount))
-
-    # generate predictions
-    predict_and_get_accuracy(testSet, trainingSet, k, stockname)
-
-
-def predict_and_get_accuracy(testSet, trainingSet, k, stockname):
-    predictions = []
-    
-    for x in range(len(testSet)):
-        neighbors = getNeighbors(trainingSet, testSet[x], k)
-        result = getResponse(neighbors)
-        print("result: ")
-        print(result)
-        predictions.append(result)
-
-    accuracy = getAccuracy(testSet, predictions)
-    print('Accuracy: ' + repr(accuracy) + '%')
-
-    # drawing another
-    plt.figure(2)
-    plt.title("Prediction vs Actual Trend of " + stockname)
-    plt.legend(loc="best")
-    row = []
-    col = []
-    for dates in range(len(testSet)):
-        new_date = datetime.datetime.strptime(testSet[dates][0], "%Y-%M-%d")
-        row.append(new_date)
-        if predictions[dates]== "down":
-            col.append(-1)
-        else:
-            col.append(1)
-    predicted_plt, = plt.plot(row, col, 'r', label="Predicted Trend")
-
-    row = []
-    col = []
-    for dates in range(len(testSet)):
-        new_date = datetime.datetime.strptime(testSet[dates][0], "%Y-%M-%d")
-        row.append(new_date)
-        if testSet[dates][-1]== "down":
-            col.append(-1)
-        else:
-            col.append(1)
-    actual_plt, = plt.plot(row, col, 'b', label="Actual Trend")
-
-    plt.legend(handles=[predicted_plt, actual_plt])
-    plt.show()
-
-
-def main():
-    split = 0.67
-    # set data
-    
-    dl = DataLoader()
-    data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2000-01-01', end_date= '2022-12-31')
-    data_df.to_csv("tsmc_stock_from2022.csv")
-    data1 = pd.read_csv("tsmc_stock_from2022.csv")
-    data1.set_index("date", inplace=True)
-    data1['open'].plot()
-    plt.ylabel("open price")
-    # plt.show()
-    data1.dropna(inplace = True)
-    # x = data1.iloc[:-1][['open', 'max', 'min', 'close', 'Trading_turnover']]
-    # print(data_df)
-    
-    x= data1.iloc[:-1,4:8]
-    print(type(x))
-    y = data1.iloc[:, 4:8]
-    y = y.shift(periods=-1)
-    y = y[:-1] #向前移一個
-    # print(y)
-    y.to_csv("tsmc.csv")
-    
-    predictFor(5, 'tsmc.csv', 'TSMC', split)
-    # predictFor(5, 'amazon.csv', 'AMZN', startdate, enddate, 1, split)
-    # predictFor(5, 'disney.csv', 'DIS', startdate, enddate, 1, split)
-    # predictFor(5, 'sbux.csv', 'SBUX', startdate, enddate, 1, split)
-    # predictFor(5, 'twlo.csv', 'TWLO', startdate, enddate, 1, split)
-    # predictFor(5, 'twtr.csv', 'TWTR', startdate, enddate, 1, split)
-    # predictFor(5, 'yahoo.csv', 'YHOO', startdate, enddate, 1, split)
-
-main()
-
-line_up, = plt.plot([1,2,3], label='Line 2')
-line_down, = plt.plot([3,2,1], label='Line 1')
-plt.legend(handles=[line_up, line_down])
-
-plt.show()
