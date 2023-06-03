@@ -1,38 +1,60 @@
-import matplotlib.pyplot as plt
+#import packages
 import pandas as pd
-import datetime
 import numpy as np
-import plotly.graph_objects as go
-import yfinance as yf
 
-start_date = '2020-01-01'
-end_date = '2022-01-01'
+#to plot within notebook
+import matplotlib.pyplot as plt
 
-ticker = 'GOOGL'
-data = yf.download(ticker, start_date, end_date)
-# print(data.tail())
-stock_open = np.array(data['Open']).T 
-stock_close = np.array(data['Close']).T
-movements = stock_close - stock_open
-# print(movements)
+#setting figure size
+from matplotlib.pylab import rcParams
+rcParams['figure.figsize'] = 20,10
 
-plt.figure(figsize = (20,10)) 
-plt.subplot(1,2,1) 
-plt.title('Company:Google',fontsize = 20)
-plt.xticks(fontsize = 10)
-plt.yticks(fontsize = 20)
-plt.xlabel('Date',fontsize = 15)
-plt.ylabel('Opening price',fontsize = 15)
-plt.plot(data['Open'])
-plt.show()
 
-plt.figure(figsize = (20,10)) # Adjusting figure size
-plt.title('Company:Google',fontsize = 20)
-plt.xticks(fontsize = 10)
-plt.yticks(fontsize = 20)
-plt.xlabel('Date',fontsize = 20)
-plt.ylabel('Price',fontsize = 20)
-plt.plot(data.iloc[0:30]['Open'],label = 'Open') # Opening prices of first 30 days are plotted against date
-plt.plot(data.iloc[0:30]['Close'],label = 'Close') # Closing prices of first 30 days are plotted against date
-plt.legend(loc='upper left', frameon=False,framealpha=1,prop={'size': 22}) # Properties of legend box
-plt.show()
+#importing libraries
+from sklearn import neighbors
+from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import MinMaxScaler
+scaler = MinMaxScaler(feature_range=(0, 1))
+
+#read the file
+from FinMind.data import DataLoader
+dl = DataLoader()
+df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01')
+
+#print the head
+df.iloc[1:,1:]
+print(df.head())
+
+
+plt.figure(figsize=(16,8))
+plt.plot(df['close'], label='Close Price history')
+# plt.show()
+
+
+#setting index as date values
+
+df.index = df['date']
+
+#sorting
+data = df.sort_index(ascending=True, axis=0)
+
+new_data = pd.DataFrame(index=range(0,len(df)),columns=['date', 'close'])
+
+for i in range(0,len(data)):
+    new_data['date'][i] = data['date'][i]
+    new_data['close'][i] = data['close'][i]
+
+print(new_data.head())
+
+from fastai.tabular.all import add_datepart
+add_datepart(new_data, 'date')
+new_data.drop('Elapsed', axis=1, inplace=True)  #elapsed will be the time stamp
+print(new_data.head())
+
+new_data['mon_fri'] = 0
+for i in range(0,len(new_data)):
+    if (new_data['Dayofweek'][i] == 0 or new_data['Dayofweek'][i] == 4):
+        new_data['mon_fri'][i] = 1
+    else:
+        new_data['mon_fri'][i] = 0
+new_data.head()
