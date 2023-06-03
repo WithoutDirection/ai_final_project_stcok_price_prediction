@@ -9,17 +9,21 @@ import pandas as pd
 
 import matplotlib.pyplot as plt   # Import matplotlib
 import json
+from FinMind.data import DataLoader
+
+
 
 # split the data into a trainingdataset and testdataset in ratio of 67/33
 
 def loadDataset(filename, split, trainingSet=[], testSet=[], content_header=[]):
-    with open(filename, 'rb') as csvfile:
+    with open(filename, 'r') as csvfile:
         # returns a reader object which will iterate over lines
         lines = csv.reader(csvfile)
         # dataset is a list of all data, where each item is a line as list
         dataset = list(lines)
         # minus 1 because we are predicting for next day
-        for x in range(len(dataset) - 1):
+        
+        for x in range(1,len(dataset) - 1):
             # convert the content to float
             # minus 1 because last is string for up or down
             for y in range(1, len(content_header) - 1):
@@ -48,16 +52,21 @@ def getNeighbors(trainingSet, testInstance, k):
     for x in range((len(trainingSet))):
         dist = euclideanDistance(testInstance, trainingSet[x], length)
         distance.append((trainingSet[x], dist))
+    
     # sort based on the the item at index 1 i.e the distance
     distance.sort(key=operator.itemgetter(1))
+    # for i in distance:
+    #     print(i)
     neighbors = []
     for x in range(k):
         neighbors.append(distance[x][0])
+        
+    for i in neighbors:
+        print(i)
     return neighbors
 
 
-# make all responses vote their classification, the one with the highest vote
-# wins
+# make all responses vote their classification, the one with the highest vote wins
 def getResponse(neighbors):
     classVotes = {}
     for x in range(len(neighbors)):
@@ -66,7 +75,8 @@ def getResponse(neighbors):
             classVotes[response] += 1
         else:
             classVotes[response] = 1
-    sortedVotes = sorted(classVotes.iteritems(), key=operator.itemgetter(1), reverse=True)
+            
+    sortedVotes = sorted(classVotes.items(), key=operator.itemgetter(1), reverse=True)
     return sortedVotes[0][0]
 
 
@@ -90,55 +100,12 @@ def RMSD(X, Y):
     return math.sqrt(pow(Y - X, 2))
 
 
-def change(today, yest):
-    if today > yest:
-        return 'up'
-    return 'down'
 
-
-
-def getData(filename, stockname, startdate, enddate):
-    stock = web.DataReader(stockname, 'yahoo', startdate, enddate)
-    print("done making network call")
-    ass = [stock.index]
-    stck_json = stock.to_json(orient="index", date_format='iso')
-    stck_dates = json.loads(stck_json)
-
-    plt.plot(stock["Adj Close"])
-    plt.title("Stock movement of " + stockname)
-
-    first_time = True
-    with open(filename, 'wb') as pp:
-        stockwriter = csv.writer(pp)
-        stp = sorted(stck_dates.keys())
-        for i in stp:
-            new_format_date = i[:10]
-            if first_time:
-                first_time = False
-                prev_closing = stck_dates[i]["Adj Close"]
-                continue
-            stockwriter.writerow([new_format_date] + [stck_dates[i]["Open"]] +  [stck_dates[i]["High"]] + [stck_dates[i]["Low"]]  +  [stck_dates[i]["Adj Close"]] + [change(stck_dates[i]["Adj Close"], prev_closing)])
-            prev_closing = stck_dates[i]["Adj Close"]
-
-
-def abc(filename, stockname, startdate, enddate):
-    apple = web.DataReader(stockname, 'yahoo', startdate, enddate)
-    with open(filename, 'wb') as csvfile:
-        stockwriter = csv.writer(csvfile, quotechar=',')
-        for ind in range(1, len(apple.Open)):
-            stockwriter.writerow(["open: "] + [apple.Open[ind - 1]] + ["    high: "] + [apple.High[ind - 1]] + ["   low: "] + [apple.Low[ind - 1]] + ["  yester close: "] + [apple['Adj Close'][ind - 1]] + [" volume: "] + [apple.Volume[ind - 1]] + [change(apple['Adj Close'][ind], apple['Adj Close'][ind - 1])])
-
-
-
-def predictFor(k, filename, stockname, startdate, enddate, writeAgain, split):
-    iv = ["date", "open", "high", "low", "yesterday closing adj", "state change"]
+def predictFor(k, filename, stockname, split):
+    iv = ["date", "open", "max", "min", "close"]
     trainingSet = []
     testSet = []
     totalCount = 0
-
-    if writeAgain:
-        print("making a network request")
-        getData(filename, stockname, startdate, enddate)
 
     # open the file
     loadDataset(filename, split, trainingSet, testSet, iv)
@@ -155,9 +122,12 @@ def predictFor(k, filename, stockname, startdate, enddate, writeAgain, split):
 
 def predict_and_get_accuracy(testSet, trainingSet, k, stockname):
     predictions = []
+    
     for x in range(len(testSet)):
         neighbors = getNeighbors(trainingSet, testSet[x], k)
         result = getResponse(neighbors)
+        print("result: ")
+        print(result)
         predictions.append(result)
 
     accuracy = getAccuracy(testSet, predictions)
@@ -190,23 +160,39 @@ def predict_and_get_accuracy(testSet, trainingSet, k, stockname):
     actual_plt, = plt.plot(row, col, 'b', label="Actual Trend")
 
     plt.legend(handles=[predicted_plt, actual_plt])
-
-
     plt.show()
 
 
 def main():
     split = 0.67
     # set data
-    startdate = datetime.datetime(2002,1,1)
-    enddate = datetime.date.today()
-
-    predictFor(5, 'amtd.csv', 'AMTD', startdate, enddate, 1, split)
-    predictFor(5, 'amazon.csv', 'AMZN', startdate, enddate, 1, split)
-    predictFor(5, 'disney.csv', 'DIS', startdate, enddate, 1, split)
-    predictFor(5, 'sbux.csv', 'SBUX', startdate, enddate, 1, split)
-    predictFor(5, 'twlo.csv', 'TWLO', startdate, enddate, 1, split)
-    predictFor(5, 'twtr.csv', 'TWTR', startdate, enddate, 1, split)
-    predictFor(5, 'yahoo.csv', 'YHOO', startdate, enddate, 1, split)
+    
+    dl = DataLoader()
+    data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2022-01-01', end_date= '2022-12-31')
+    data_df.to_csv("tsmc_stock_from2022.csv")
+    data1 = pd.read_csv("tsmc_stock_from2022.csv")
+    data1.set_index("date", inplace=True)
+    data1['open'].plot()
+    plt.ylabel("open price")
+    # plt.show()
+    data1.dropna(inplace = True)
+    # x = data1.iloc[:-1][['open', 'max', 'min', 'close', 'Trading_turnover']]
+    # print(data_df)
+    
+    x= data1.iloc[:-1,4:8]
+    print(type(x))
+    y = data1.iloc[:, 4:8]
+    y = y.shift(periods=-1)
+    y = y[:-1] #向前移一個
+    # print(y)
+    y.to_csv("tsmc.csv")
+    
+    predictFor(5, 'tsmc.csv', 'TSMC', split)
+    # predictFor(5, 'amazon.csv', 'AMZN', startdate, enddate, 1, split)
+    # predictFor(5, 'disney.csv', 'DIS', startdate, enddate, 1, split)
+    # predictFor(5, 'sbux.csv', 'SBUX', startdate, enddate, 1, split)
+    # predictFor(5, 'twlo.csv', 'TWLO', startdate, enddate, 1, split)
+    # predictFor(5, 'twtr.csv', 'TWTR', startdate, enddate, 1, split)
+    # predictFor(5, 'yahoo.csv', 'YHOO', startdate, enddate, 1, split)
 
 main()
