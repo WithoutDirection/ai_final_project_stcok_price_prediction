@@ -18,7 +18,7 @@ from sklearn.ensemble import RandomForestClassifier
 from FinMind.data import DataLoader
 
 dl = DataLoader()
-data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2015-01-01')
+data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01', end_date= '2022-12-31')
 
 
 # 存成csv
@@ -26,10 +26,10 @@ data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2015-01-01')
 # 使用open, max, min, close, spread, Trading_turnover六個指標進行預測
 # 以close的股價作為預測目標
 # 用train_test_split切分test&train data
-# 並進行標準化
+# 並進行標準化(不用這個)
 
-data_df.to_csv("tsmc_stock_from2015.csv")
-data1 = pd.read_csv("tsmc_stock_from2015.csv")
+data_df.to_csv("tsmc_stock_from2022.csv")
+data1 = pd.read_csv("tsmc_stock_from202022.csv")
 data1.set_index("date", inplace=True)
 #data1['open'].plot()
 #plt.ylabel("open price")
