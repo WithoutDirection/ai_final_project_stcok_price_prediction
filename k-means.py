@@ -5,15 +5,14 @@ import numpy as np
 from sklearn import neighbors
 import math
 from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score 
-from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance, accuracy_score
+from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance
 
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
 from itertools import cycle
 
 obj = getData
-data = obj.get_stock_data(obj, '2330', '2020-01-01', '2022-12-31')
+data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
 
 class KNN() :
     def __init__(self,k = 15) :
@@ -28,6 +27,7 @@ class KNN() :
         self.y_train = None
         self.X_test = None
         self.y_test = None
+        self.neighbor = None
 
     def extract(self, tagName = 'close'):
         self.df = data[['date',tagName]]
@@ -64,12 +64,13 @@ class KNN() :
         # print("y_test", self.y_test)
         
         
-    def predict(self):
+    def train(self):
         neighbor = neighbors.KNeighborsRegressor(n_neighbors = self.K)
         neighbor.fit(self.X_train, self.y_train)
         train_predict=neighbor.predict(self.X_train)
         test_predict=neighbor.predict(self.X_test)
-
+        self.neighbor = neighbor
+        
         train_predict = train_predict.reshape(-1,1)
         test_predict = test_predict.reshape(-1,1)
 
@@ -134,12 +135,93 @@ class KNN() :
         fig.update_xaxes(showgrid=False)
         fig.update_yaxes(showgrid=False)
         fig.show()
+        
+        
+        
+    def predict(self, pred_days):
+        time_step = self.K
+        x_input=self.test_data[len(self.test_data)- time_step:].reshape(1,-1)
+        temp_input=list(x_input)
+        temp_input=temp_input[0].tolist()
+        
+        lst_output=[]
+        i=0
+        
+        while(i<pred_days):
+    
+            if(len(temp_input)>time_step):
+        
+                x_input=np.array(temp_input[1:])
+                #print("{} day input {}".format(i,x_input))
+                x_input=x_input.reshape(1,-1)
+        
+                yhat = self.neighbor.predict(x_input)
+                #print("{} day output {}".format(i,yhat))
+                temp_input.extend(yhat.tolist())
+                temp_input=temp_input[1:]
+       
+                lst_output.extend(yhat.tolist())
+                i=i+1
+        
+            else:
+                yhat = self.neighbor.predict(x_input)
+        
+                temp_input.extend(yhat.tolist())
+                lst_output.extend(yhat.tolist())
+        
+                i=i+1
+        
+        print("Output of predicted next days: ", len(lst_output))
+        last_days=np.arange(1,time_step+1)
+        day_pred=np.arange(time_step+1,time_step+pred_days+1)
+        print(last_days)
+        print(day_pred)
+        temp_mat = np.empty((len(last_days)+pred_days+1,1))
+        temp_mat[:] = np.nan
+        temp_mat = temp_mat.reshape(1,-1).tolist()[0]
+
+        last_original_days_value = temp_mat
+        next_predicted_days_value = temp_mat
+
+        last_original_days_value[0:time_step+1] = self.scaler.inverse_transform(self.df[len(self.df)-time_step:]).reshape(1,-1).tolist()[0]
+        next_predicted_days_value[time_step+1:] = self.scaler.inverse_transform(np.array(lst_output).reshape(-1,1)).reshape(1,-1).tolist()[0]
+
+        new_pred_plot = pd.DataFrame({'last_original_days_value':last_original_days_value, 'next_predicted_days_value':next_predicted_days_value})
+
+        names = cycle(['Last 15 days close price','Predicted next 10 days close price'])    
+
+        fig = px.line(new_pred_plot,x=new_pred_plot.index, y=[new_pred_plot['last_original_days_value'],
+                                                      new_pred_plot['next_predicted_days_value']],
+                    labels={'value': 'Stock price','index': 'Timestamp'})
+        fig.update_layout(title_text='Compare last 15 days vs next 10 days',
+                  plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Close Price')
+        fig.for_each_trace(lambda t:  t.update(name = next(names)))
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        fig.show()
+        
+        knndf=self.df.tolist()
+        knndf.extend((np.array(lst_output).reshape(-1,1)).tolist())
+        knndf=self.scaler.inverse_transform(knndf).reshape(1,-1).tolist()[0]
+
+        names = cycle(['Close price'])
+
+        fig = px.line(knndf,labels={'value': 'Stock price','index': 'Timestamp'})
+        fig.update_layout(title_text='Plotting whole closing stock price with prediction',
+                        plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Stock')
+        fig.for_each_trace(lambda t:  t.update(name = next(names)))
+
+        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        fig.show()
        
        
        
 k_means = KNN(15)
 k_means.extract('close')
 k_means.normalize()
-k_means.split(0.65)
-k_means.predict()
+k_means.split(0.6)
+k_means.train()
+k_means.predict(14)
 

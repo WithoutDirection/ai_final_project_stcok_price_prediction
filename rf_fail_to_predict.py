@@ -29,7 +29,7 @@ data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01', en
 # 並進行標準化(不用這個)
 
 data_df.to_csv("tsmc_stock_from2022.csv")
-data1 = pd.read_csv("tsmc_stock_from202022.csv")
+data1 = pd.read_csv("tsmc_stock_from2022.csv")
 data1.set_index("date", inplace=True)
 #data1['open'].plot()
 #plt.ylabel("open price")
