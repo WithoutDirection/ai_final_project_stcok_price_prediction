@@ -39,7 +39,7 @@ class Lstm():
     self.model.fit(x_train, y_train, batch_size=16, epochs=50)
     predictions = self.model.predict(x_test)
     predictions = self.scaler.inverse_transform(predictions)
-    rmse = self.rmse(predictions, y_test)
+    rmse, accuracy = self.analyze(predictions, y_test)
 
     # plot the result of test data
     data = data_df.filter(['close'])
@@ -55,17 +55,19 @@ class Lstm():
     plt.legend(['Real', 'Train', 'Val', 'Predictions'], loc='lower right')
     plt.show()
     
-    return rmse
+    return rmse, accuracy
 
   # Calculate root square mean error for test data
-  def rmse(self, predictions, y_test):
+  def analyze(self, predictions, y_test):
+    accuracy = 0
     rmse = 0.0
     for i in range(len(predictions)):
+      if(predictions[i]-y_test[i]<0.5): accuracy += 1
       rmse += (predictions[i]-y_test[i])**2
     rmse /= len(predictions)
     rmse = math.sqrt(rmse)
-    print("Root Mean Square Error: ", rmse)
-    return rmse
+    accuracy /= len(predictions)
+    return rmse, accuracy
   
   # split the data into train data and test data the ratio is 8:2
   def split_data(self):
@@ -129,12 +131,13 @@ class Lstm():
 if __name__ == "__main__":
   #dl = DataLoader()
   #data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01')
-  #data_df.to_csv("tsme_stock_from2020.csv")
-  data_df = pd.read_csv("tsme_stock_from2020.csv")
+  #data_df.to_csv("tsmc_stock_from2020.csv")
+  data_df = pd.read_csv("tsmc_stock_from2020.csv")
   data_df.set_index("date", inplace=True)
   close_prices = data_df['close']
   lstm = Lstm()
-  rmse = lstm.train(close_prices)
+  rmse, accuracy = lstm.train(close_prices)
   result = lstm.predict(14)
   print("Test data root mean square error: ", rmse)
+  print(f'Test data accuracy: {round(accuracy, 2)*100}%')  
   print("Predict future 14 days closed price: ", result)
