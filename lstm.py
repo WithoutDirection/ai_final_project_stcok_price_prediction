@@ -18,7 +18,8 @@ class Lstm():
     self.scaler = None
     self.scaled_data = None
     self.close_prices = None
-    
+
+  # Calculate root square mean error for test data
   def rsme(self, predictions, y_test):
     rsme = 0.0
     for i in range(len(predictions)):
@@ -28,33 +29,39 @@ class Lstm():
     print("Root Square Mean Error: ", rsme)
     return rsme
   
-  def train(self, close_prices):
-    self.close_prices = close_prices
-    values = close_prices.values
+  def split_data(self):
+    values = self.close_prices.values
     training_data_len = math.ceil(len(values)* 0.8)
     self.scaler = MinMaxScaler(feature_range=(0,1))
     self.scaled_data = self.scaler.fit_transform(values.reshape(-1,1))
+    
     train_data = self.scaled_data[0: training_data_len, :]
-
     x_train = []
     y_train = []
     for i in range(self.window_size, len(train_data)):
         x_train.append(train_data[i-self.window_size:i, 0])
         y_train.append(train_data[i, 0])
         
-    x_train, y_train = np.array(x_train), np.array(y_train)
-    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
-
     test_data = self.scaled_data[training_data_len-self.window_size: , : ]
     x_test = []
     y_test = values[training_data_len:]
 
     for i in range(self.window_size, len(test_data)):
       x_test.append(test_data[i-self.window_size:i, 0])
+    
+    return x_train, y_train, x_test, y_test, training_data_len
+  
+  def train(self, close_prices):
+    self.close_prices = close_prices
+    x_train, y_train, x_test, y_test, training_data_len = self.split_data()
 
-    # setting up LSTM 
+        
+    x_train, y_train = np.array(x_train), np.array(y_train)
+    x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
     x_test = np.array(x_test)
     x_test = np.reshape(x_test, (x_test.shape[0], x_test.shape[1], 1))
+    
+    # setting up LSTM 
     self.model.add(keras.layers.LSTM(50, return_sequences=True, input_shape=(x_train.shape[1], 1)))
     self.model.add(keras.layers.LSTM(50))
     self.model.add(keras.layers.Dense(1))
@@ -116,10 +123,7 @@ class Lstm():
     
     
 if __name__ == "__main__":
-  dl = DataLoader()
-  data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01')
-  data_df.to_csv("lstm_data.csv")
-  data_df = pd.read_csv("lstm_data.csv")
+  data_df = pd.read_csv("tsmc_stock_from2020.csv")
   data_df.set_index("date", inplace=True)
   close_prices = data_df['close']
   lstm = Lstm()
