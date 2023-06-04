@@ -20,8 +20,8 @@ class getData:
         
         dl = DataLoader()
         data_df = dl.taiwan_stock_daily(stock_id = self.stock_id, start_date = self.startDate, end_date= self.endDate)
-        data_df.to_csv(str(id) + "data.csv")
-        data = pd.read_csv(str(id) + "data.csv")
+        data_df.to_csv(str(id) + "_data.csv")
+        data = pd.read_csv(str(id) + "_data.csv")
         data.dropna(inplace = True)
         data = data.iloc[:-1][[ 'date', 'open', 'max', 'min', 'close']]
         data['date'] = pd.to_datetime(data.date)
@@ -29,6 +29,7 @@ class getData:
         self.data = data
 
         return self.data
+    
 
 # obj = getData
 # data = obj.get_stock_data(obj ,'2330', '2020-01-01', '2022-12-31')
