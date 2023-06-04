@@ -39,7 +39,7 @@ class Lstm():
     self.model.fit(x_train, y_train, batch_size=16, epochs=50)
     predictions = self.model.predict(x_test)
     predictions = self.scaler.inverse_transform(predictions)
-    rsme = self.rsme(predictions, y_test)
+    rmse = self.rmse(predictions, y_test)
 
     # plot the result of test data
     data = data_df.filter(['close'])
@@ -55,17 +55,17 @@ class Lstm():
     plt.legend(['Real', 'Train', 'Val', 'Predictions'], loc='lower right')
     plt.show()
     
-    return rsme
+    return rmse
 
   # Calculate root square mean error for test data
-  def rsme(self, predictions, y_test):
-    rsme = 0.0
+  def rmse(self, predictions, y_test):
+    rmse = 0.0
     for i in range(len(predictions)):
-      rsme += (predictions[i]-y_test[i])**2
-    rsme /= len(predictions)
-    rsme = math.sqrt(rsme)
-    print("Root Square Mean Error: ", rsme)
-    return rsme
+      rmse += (predictions[i]-y_test[i])**2
+    rmse /= len(predictions)
+    rmse = math.sqrt(rmse)
+    print("Root Mean Square Error: ", rmse)
+    return rmse
   
   # split the data into train data and test data the ratio is 8:2
   def split_data(self):
@@ -134,7 +134,7 @@ if __name__ == "__main__":
   data_df.set_index("date", inplace=True)
   close_prices = data_df['close']
   lstm = Lstm()
-  rsme = lstm.train(close_prices)
+  rmse = lstm.train(close_prices)
   result = lstm.predict(14)
-  print("Test data root square mean error: ", rsme)
+  print("Test data root mean square error: ", rmse)
   print("Predict future 14 days closed price: ", result)
