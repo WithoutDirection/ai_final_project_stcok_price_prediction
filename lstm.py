@@ -19,7 +19,7 @@ class Lstm():
   # Train the LSTM model
   def train(self, close_prices):
     self.close_prices = close_prices
-    x_train, y_train, x_test, y_test = self.split_data()
+    x_train, y_train, x_test, y_test, training_data_len = self.split_data()
 
     x_train, y_train = np.array(x_train), np.array(y_train)
     x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
@@ -81,7 +81,7 @@ class Lstm():
     for i in range(self.window_size, len(test_data)):
       x_test.append(test_data[i-self.window_size:i, 0])
     
-    return x_train, y_train, x_test, y_test
+    return x_train, y_train, x_test, y_test, training_data_len
    
   # predict the future stock price  
   def predict(self, days):
