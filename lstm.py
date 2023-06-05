@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from tensorflow import keras
 import datetime
 
-keras.utils.set_random_seed(6789)
+keras.utils.set_random_seed(35)
 
 class Lstm():
   def __init__(self):

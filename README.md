@@ -9,16 +9,14 @@
 
 ## AI model
 * random forest tree
-* k-means
+* KNN
 * LSTM
 
 ## 分工
-* 爬蟲相關功能
 * draft the fugure of the stocks
 * random forest tree implement
-* k-means implement
+* KNN implement
 * LSTM implement
-* connect each part together
 
 ## seting workship
 * VS code remotely update github 
