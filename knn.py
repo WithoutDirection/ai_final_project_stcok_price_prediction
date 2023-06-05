@@ -4,19 +4,13 @@ from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 from sklearn import neighbors
 import math
-from sklearn.metrics import mean_squared_error, mean_absolute_error, explained_variance_score, r2_score 
-from sklearn.metrics import mean_poisson_deviance, mean_gamma_deviance
-
-import plotly.graph_objects as go
-import plotly.express as px
-from itertools import cycle
+from sklearn.metrics import mean_squared_error
 
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set()
-import datetime
 
-obj = getData
-data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
+
+data = pd.read_csv('2330_data.csv')
 
 class KNN() :
     def __init__(self,k = 15) :
@@ -78,36 +72,42 @@ class KNN() :
         train_predict = train_predict.reshape(-1,1)
         test_predict = test_predict.reshape(-1,1)
 
-        print("Train data prediction:", train_predict.shape)
-        print("Test data prediction:", test_predict.shape)
+        # print("Train data prediction:", train_predict.shape)
+        # print("Test data prediction:", test_predict.shape)
         
         train_predict = self.scaler.inverse_transform(train_predict)
         test_predict = self.scaler.inverse_transform(test_predict)
-        original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
-        original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
         
-        def accuracy(train_predict, test_predict):
+        def accuracy(test_predict):
             
+            original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1))
+            
+            accuracy = 0
+            for i in range(len(test_predict)):
+                errors = abs(test_predict[i]-original_ytest[i])
+                mape = 100 * (errors / original_ytest[i])
+                accuracy += 100 - np.mean(mape)
+            accuracy /= len(test_predict)
             
             # Evaluation metrices RMSE and accuracy
             print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest,test_predict)))       
             print(f'Test data accuracy: {round(accuracy, 2)}%') 
 
         
-        accuracy (train_predict, test_predict)
+        accuracy (test_predict)
+        
         look_back=self.K
         trainPredictPlot = np.empty_like(self.df)
         trainPredictPlot[:, :] = np.nan
         trainPredictPlot[look_back:len(train_predict)+look_back, :] = train_predict
-        print("Train predicted data: ", trainPredictPlot.shape)
+        # print("Train predicted data: ", trainPredictPlot.shape)
 
         #shift test predictions for plotting
         testPredictPlot = np.empty_like(self.df)
         testPredictPlot[:, :] = np.nan
         testPredictPlot[len(train_predict)+(look_back*2)+1:len(self.df)-1, :] = test_predict
-        print("Test predicted data: ", testPredictPlot.shape)
+        # print("Test predicted data: ", testPredictPlot.shape)
 
-        names = cycle(['Original close price','Train predicted close price','Test predicted close price'])
 
         plotdf = pd.DataFrame({'date': self.stock['date'],
                        'original_close': self.stock['close'],
@@ -182,7 +182,7 @@ class KNN() :
         
         plotdf = pd.DataFrame({'close_price':next_predicted_days_value[time_step + 1:]})
         plotdf['date'] = future
-        print(plotdf)
+        # print(plotdf)
         
         plt.figure(figsize=(12,5))
         sns.set_style("ticks")
@@ -198,7 +198,7 @@ class KNN() :
 k_means = KNN(15)
 k_means.extract('close')
 k_means.normalize()
-k_means.split(0.6)
+k_means.split(0.8)
 k_means.train()
 k_means.predict(14)
 
