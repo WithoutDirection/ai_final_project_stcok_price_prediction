@@ -89,26 +89,8 @@ class KNN() :
                 accuracy += 100 - np.mean(mape)
             accuracy /= len(test_predict)
             
-            # Evaluation metrices RMSE and MAE
-            print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
-            print("Train data MSE: ", mean_squared_error(original_ytrain,train_predict))
-            print("Test data MAE: ", mean_absolute_error(original_ytrain,train_predict))
-            print("-------------------------------------------------------------------------------------")
+            # Evaluation metrices RMSE and accuracy
             print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest,test_predict)))
-            print("Test data MSE: ", mean_squared_error(original_ytest,test_predict))
-            print("Test data MAE: ", mean_absolute_error(original_ytest,test_predict))
-            
-            print("Train data explained variance regression score:", explained_variance_score(original_ytrain, train_predict))
-            print("Test data explained variance regression score:", explained_variance_score(original_ytest, test_predict))
-            
-            print("Train data R2 score:", r2_score(original_ytrain, train_predict))
-            print("Test data R2 score:", r2_score(original_ytest, test_predict))
-            
-            print("Train data MGD: ", mean_gamma_deviance(original_ytrain, train_predict))
-            print("Test data MGD: ", mean_gamma_deviance(original_ytest, test_predict))
-            print("----------------------------------------------------------------------")
-            print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
-            print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
             print(f'Test data accuracy: {round(accuracy, 2)}%') 
             return train_predict, test_predict
         
