@@ -132,9 +132,9 @@ class Lstm():
     
 if __name__ == "__main__":
   #dl = DataLoader()
-  #data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01')
-  #data_df.to_csv("tsmc_stock_from2020.csv")
-  data_df = pd.read_csv("tsmc_stock_from2020.csv")
+  #data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2022-01-01')
+  #data_df.to_csv("2330_data.csv")
+  data_df = pd.read_csv("2330_data.csv")
   data_df.set_index("date", inplace=True)
   close_prices = data_df['close']
   lstm = Lstm()

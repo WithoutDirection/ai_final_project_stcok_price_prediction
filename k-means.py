@@ -11,8 +11,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from itertools import cycle
 
-obj = getData
-data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
+data = pd.read_csv("2330_data.csv")
 
 class KNN() :
     def __init__(self,k = 15) :

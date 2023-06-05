@@ -30,6 +30,9 @@ class getData:
 
         return self.data
     
+obj = getData
+data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
+    
 
 # obj = getData
 # data = obj.get_stock_data(obj ,'2330', '2020-01-01', '2022-12-31')
