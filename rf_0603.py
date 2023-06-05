@@ -10,19 +10,17 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from FinMind.data import DataLoader
 
-stock_id = '2330'
-start_date = '2022-01-01'
+data_file_name = '2330_data.csv'
 window_size = 60
 predict_days = 14
+split_rate = 0.8
+test_days = 0
 
-def getdata_df(stock_id, start_date):
-    dl = DataLoader()
-    data_dl = dl.taiwan_stock_daily(stock_id = stock_id, start_date = start_date,end_date='2023-05-25')
-    data_dl.to_csv("stock_data.csv")
-    data_df = pd.read_csv("stock_data.csv")
+def getdata_df(file_name):
+    data_df = pd.read_csv(file_name)
     return data_df
 
-def split_xy(window_size, train_data):
+def define_xy(window_size, train_data):
     x = []
     y = []
     for i in range(window_size, len(train_data)):
@@ -33,12 +31,20 @@ def split_xy(window_size, train_data):
             x[i-window_size].loc['min'+str(j)] = train_data.iloc[i-window_size+j, 7]
             x[i-window_size].loc['close'+str(j)] = train_data.iloc[i-window_size+j, 8]
         y.append(train_data.iloc[i, 5:9])
-    print("len of train data:",len(x))
+    print("len of train&test data:",len(x))
     #print(x[0])
     #print(type(x[0]))
     #print(y[0])
     #print(type(y[0]))
     return x, y
+
+def split_test_train(test_days, x, y):
+    x_train = x[-test_days:]
+    x_test = x[:-test_days]
+    y_train = y[-test_days:]
+    y_test = y[:-test_days]
+
+    return x_train, x_test, y_train, y_test
 
 def hyperparameter_tuning(x_train, y_train):
     grid_rf = {
@@ -90,25 +96,36 @@ def prediction(days, model, exist_data, window_size):
         #print(predict_x)
         exist_data.loc[len(exist_data)] = predict_x[0]
         # print(type(predict_x[0]))
-    print("***data after prediction:***")
-    print(exist_data.iloc[-(days):,:])
+    #print("***data after prediction:***")
+    #print(exist_data.iloc[-(days):,:])
     return exist_data.iloc[-(days):, :]
 
 def create_prediction_with_date(new_data, predict_days, last_date):
     next_date = pd.to_datetime(last_date) + pd.DateOffset(days=1)
     new_dates = pd.date_range(start=next_date, periods=predict_days, freq='B')
-    for i in range(predict_days):
-        new_data.loc[i, 'date'] = new_dates[i].date()
+    new_data['date'] = new_dates
     return new_data
 
-def plot(data):
-    print()
+def plot(real, exist_predict, new_predict):
+    plt.figure(figsize=(16,8))
+    plt.plot(real.iloc[:-test_days, 'date'], real.iloc[:-test_days, 'close'], label='real_train')
+    plt.plot(real.iloc[-test_days:, 'date'], real.iloc[-test_days:, 'close'], label='real_test')
+    plt.plot(exist_predict.iloc[:-test_days, 'date'], exist_predict.iloc[:-test_days, 'close'], label='predict_train')
+    plt.plot(exist_predict.iloc[-test_days:, 'date'], exist_predict.iloc[-test_days:, 'close'], label='predict_test')
+    plt.plot(new_predict['date'], new_predict['close'], label='new predict')
+    plt.xlabel('Date')
+    plt.ylabel('Close Price')
+    plt.legend()
+    plt.show()
 
 
 # 以下是main
-data_df = getdata_df(stock_id, start_date)
-x, y = split_xy(window_size, data_df)
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25,  random_state=0)
+data_df = getdata_df(data_file_name)
+print("len of data_df:", len(data_df))
+test_days = int(len(data_df)*split_rate)
+x, y = define_xy(window_size, data_df)
+# x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25,  random_state=0)
+x_train, x_test, y_train, y_test = split_test_train(test_days, x, y)
 print('param tuning...')
 # model = hyperparameter_tuning(x_train, y_train) #240個參數tune超久==，得到一次後就自己填:D
 model = RandomForestRegressor(random_state= 2,
@@ -119,18 +136,26 @@ model = RandomForestRegressor(random_state= 2,
                             bootstrap= True)
 print('model fitting...')
 model.fit(x_train, y_train)
-predict_x_test = model.predict(x_test)
 print('scoring test...')
+predict_x_test = model.predict(x_test)
 score(predict_x_test, y_test)
-print('predict with all exist data...')
-predict_all_x = model.predict(x)
-print(predict_all_x)
-print('scoring all data...')
-score(predict_all_x, y)
-print('predicting...')
+print('scoring train...')
+predict_x_train = model.predict(x_train)
+score(predict_x_train, y_train)
+print('predicting new days...')
 predict_newday = prediction(predict_days, model, data_df.iloc[:, 5:9], window_size)
 print("create prediction with date...")
-last_date = data_df.iloc[-1,'date']
+last_date = data_df.loc[len(data_df)-1,'date']
 print(last_date)
-predict_newday = create_prediction_with_date(predict_newday, predict_days,last_date)
+predict_newday = create_prediction_with_date(predict_newday, predict_days, last_date)
 print(predict_newday)
+"""
+#下面在畫圖
+all_predict = model.predict(x)
+print("check len:",len(all_predict), " ",len(data_df)-window_size)
+print(data_df.iloc[window_size:,'date'])
+all_predict['date'] = list(data_df.iloc[window_size:,'date'])
+all_real = y
+all_real['date'] = data_df.iloc[window_size:,'date']
+plot(all_real, all_predict, predict_newday)
+"""
