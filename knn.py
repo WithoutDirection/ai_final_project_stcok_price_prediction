@@ -11,7 +11,8 @@ import plotly.graph_objects as go
 import plotly.express as px
 from itertools import cycle
 
-data = pd.read_csv("2330_data.csv")
+obj = getData
+data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
 
 class KNN() :
     def __init__(self,k = 15) :
@@ -76,18 +77,13 @@ class KNN() :
         print("Train data prediction:", train_predict.shape)
         print("Test data prediction:", test_predict.shape)
         
+        train_predict = self.scaler.inverse_transform(train_predict)
+        test_predict = self.scaler.inverse_transform(test_predict)
+        original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
+        original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
+        
         def accuracy(train_predict, test_predict):
-            train_predict = self.scaler.inverse_transform(train_predict)
-            test_predict = self.scaler.inverse_transform(test_predict)
-            original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
-            original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
-
-            accuracy = 0
-            for i in range(len(test_predict)):
-                errors = abs(test_predict[i]-original_ytest[i])
-                mape = 100 * (errors / original_ytest[i])
-                accuracy += 100 - np.mean(mape)
-            accuracy /= len(test_predict)
+            
             
             # Evaluation metrices RMSE and MAE
             print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
@@ -109,10 +105,8 @@ class KNN() :
             print("----------------------------------------------------------------------")
             print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
             print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
-            print(f'Test data accuracy: {round(accuracy, 2)}%') 
-            return train_predict, test_predict
         
-        train_predict, test_predict = accuracy(train_predict, test_predict)
+        
         look_back=self.K
         trainPredictPlot = np.empty_like(self.df)
         trainPredictPlot[:, :] = np.nan
@@ -146,10 +140,15 @@ class KNN() :
         
         
     def predict(self, pred_days):
+        
+        
         time_step = self.K
-        x_input=self.test_data[len(self.test_data)- time_step:].reshape(1,-1)
+        # use last n days to predict m days stock prices
+        x_input=self.test_data[len(self.test_data)- time_step:].reshape(1,-1) # slice and normalize
         temp_input=list(x_input)
         temp_input=temp_input[0].tolist()
+        
+        
         
         lst_output=[]
         i=0
@@ -157,7 +156,8 @@ class KNN() :
         while(i<pred_days):
     
             if(len(temp_input)>time_step):
-        
+                
+                
                 x_input=np.array(temp_input[1:])
                 #print("{} day input {}".format(i,x_input))
                 x_input=x_input.reshape(1,-1)
@@ -171,9 +171,8 @@ class KNN() :
                 i=i+1
         
             else:
+                
                 yhat = self.neighbor.predict(x_input)
-        
-                temp_input.extend(yhat.tolist())
                 lst_output.extend(yhat.tolist())
         
                 i=i+1
@@ -181,8 +180,7 @@ class KNN() :
         print("Output of predicted next days: ", len(lst_output))
         last_days=np.arange(1,time_step+1)
         day_pred=np.arange(time_step+1,time_step+pred_days+1)
-        print(last_days)
-        print(day_pred)
+        
         temp_mat = np.empty((len(last_days)+pred_days+1,1))
         temp_mat[:] = np.nan
         temp_mat = temp_mat.reshape(1,-1).tolist()[0]
@@ -225,10 +223,10 @@ class KNN() :
        
        
        
-KNN = KNN()
-KNN.extract()
-KNN.normalize()
-KNN.split()
-KNN.train()
-KNN.predict(14)
+k_means = KNN(15)
+k_means.extract('close')
+k_means.normalize()
+k_means.split(0.6)
+k_means.train()
+k_means.predict(14)
 
