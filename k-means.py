@@ -82,6 +82,13 @@ class KNN() :
             test_predict = self.scaler.inverse_transform(test_predict)
             original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
             original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
+
+            accuracy = 0
+            for i in range(len(test_predict)):
+                errors = abs(test_predict[i]-original_ytest[i])
+                mape = 100 * (errors / original_ytest[i])
+                accuracy += 100 - np.mean(mape)
+            accuracy /= len(test_predict)
             
             # Evaluation metrices RMSE and MAE
             print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
@@ -103,6 +110,7 @@ class KNN() :
             print("----------------------------------------------------------------------")
             print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
             print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
+            print(f'Test data accuracy: {round(accuracy, 2)}%') 
             return train_predict, test_predict
         
         train_predict, test_predict = accuracy(train_predict, test_predict)
