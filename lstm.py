@@ -62,7 +62,9 @@ class Lstm():
     accuracy = 0
     rmse = 0.0
     for i in range(len(predictions)):
-      if(predictions[i]-y_test[i]<0.5): accuracy += 1
+      errors = abs(predictions[i]-y_test[i])
+      mape = 100 * (errors / y_test[i])
+      accuracy += 100 - np.mean(mape)
       rmse += (predictions[i]-y_test[i])**2
     rmse /= len(predictions)
     rmse = math.sqrt(rmse)
@@ -115,12 +117,11 @@ class Lstm():
       predictions.append(prediction)
       self.update_scaled_data()
     
+    result = pd.DataFrame(predictions, index=fdate) 
     plt.figure(figsize=(16,8))
-    plt.plot(fdate, predictions)
-    plt.xlabel('Date')
-    plt.ylabel('Close Price')
+    plt.plot(result)
     plt.show()
-    return predictions
+    return result
   
   # update data after a prediction
   def update_scaled_data(self):
@@ -130,14 +131,14 @@ class Lstm():
     
 if __name__ == "__main__":
   #dl = DataLoader()
-  #data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2020-01-01')
-  #data_df.to_csv("tsmc_stock_from2020.csv")
-  data_df = pd.read_csv("tsmc_stock_from2020.csv")
+  #data_df = dl.taiwan_stock_daily(stock_id = '2330', start_date = '2022-01-01')
+  #data_df.to_csv("2330_data.csv")
+  data_df = pd.read_csv("2330_data.csv")
   data_df.set_index("date", inplace=True)
   close_prices = data_df['close']
   lstm = Lstm()
   rmse, accuracy = lstm.train(close_prices)
   result = lstm.predict(14)
   print("Test data root mean square error: ", rmse)
-  print(f'Test data accuracy: {round(accuracy, 2)*100}%')  
+  print(f'Test data accuracy: {round(accuracy, 2)}%')  
   print("Predict future 14 days closed price: ", result)
