@@ -37,6 +37,12 @@ class Lstm():
     predictions = self.model.predict(x_test)
     predictions = self.scaler.inverse_transform(predictions)
     rmse, accuracy = self.analyze(predictions, y_test)
+
+    # plot the result of test data
+    data = data_df.filter(['close'])
+    train = data[:training_data_len]
+    validation = data[training_data_len:]
+    validation['Predictions'] = predictions
     
     return rmse, accuracy
 
