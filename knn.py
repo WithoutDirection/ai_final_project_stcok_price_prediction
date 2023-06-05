@@ -11,8 +11,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from itertools import cycle
 
-obj = getData
-data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
+data = pd.read_csv("2330_data.csv")
 
 class KNN() :
     def __init__(self,k = 15) :
@@ -82,6 +81,13 @@ class KNN() :
             test_predict = self.scaler.inverse_transform(test_predict)
             original_ytrain = self.scaler.inverse_transform(self.y_train.reshape(-1,1)) 
             original_ytest = self.scaler.inverse_transform(self.y_test.reshape(-1,1)) 
+
+            accuracy = 0
+            for i in range(len(test_predict)):
+                errors = abs(test_predict[i]-original_ytest[i])
+                mape = 100 * (errors / original_ytest[i])
+                accuracy += 100 - np.mean(mape)
+            accuracy /= len(test_predict)
             
             # Evaluation metrices RMSE and MAE
             print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
@@ -103,6 +109,7 @@ class KNN() :
             print("----------------------------------------------------------------------")
             print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
             print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
+            print(f'Test data accuracy: {round(accuracy, 2)}%') 
             return train_predict, test_predict
         
         train_predict, test_predict = accuracy(train_predict, test_predict)
@@ -218,10 +225,10 @@ class KNN() :
        
        
        
-k_means = KNN(15)
-k_means.extract('close')
-k_means.normalize()
-k_means.split(0.6)
-k_means.train()
-k_means.predict(14)
+KNN = KNN()
+KNN.extract()
+KNN.normalize()
+KNN.split()
+KNN.train()
+KNN.predict(14)
 
