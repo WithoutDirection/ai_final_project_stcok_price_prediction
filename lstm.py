@@ -62,7 +62,9 @@ class Lstm():
     accuracy = 0
     rmse = 0.0
     for i in range(len(predictions)):
-      if(predictions[i]-y_test[i]<0.5): accuracy += 1
+      errors = abs(predictions[i]-y_test[i])
+      mape = 100 * (errors / y_test[i])
+      accuracy += 100 - np.mean(mape)
       rmse += (predictions[i]-y_test[i])**2
     rmse /= len(predictions)
     rmse = math.sqrt(rmse)
@@ -139,5 +141,5 @@ if __name__ == "__main__":
   rmse, accuracy = lstm.train(close_prices)
   result = lstm.predict(14)
   print("Test data root mean square error: ", rmse)
-  print(f'Test data accuracy: {round(accuracy, 2)*100}%')  
+  print(f'Test data accuracy: {round(accuracy, 2)}%')  
   print("Predict future 14 days closed price: ", result)
