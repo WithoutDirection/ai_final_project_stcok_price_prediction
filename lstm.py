@@ -117,12 +117,11 @@ class Lstm():
       predictions.append(prediction)
       self.update_scaled_data()
     
+    result = pd.DataFrame(predictions, index=fdate) 
     plt.figure(figsize=(16,8))
-    plt.plot(fdate, predictions)
-    plt.xlabel('Date')
-    plt.ylabel('Close Price')
+    plt.plot(result)
     plt.show()
-    return predictions
+    return result
   
   # update data after a prediction
   def update_scaled_data(self):
