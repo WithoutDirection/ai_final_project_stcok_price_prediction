@@ -89,28 +89,12 @@ class KNN() :
         def accuracy(train_predict, test_predict):
             
             
-            # Evaluation metrices RMSE and MAE
-            print("Train data RMSE: ", math.sqrt(mean_squared_error(original_ytrain,train_predict)))
-            print("Train data MSE: ", mean_squared_error(original_ytrain,train_predict))
-            print("Test data MAE: ", mean_absolute_error(original_ytrain,train_predict))
-            print("-------------------------------------------------------------------------------------")
-            print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest,test_predict)))
-            print("Test data MSE: ", mean_squared_error(original_ytest,test_predict))
-            print("Test data MAE: ", mean_absolute_error(original_ytest,test_predict))
-            
-            print("Train data explained variance regression score:", explained_variance_score(original_ytrain, train_predict))
-            print("Test data explained variance regression score:", explained_variance_score(original_ytest, test_predict))
-            
-            print("Train data R2 score:", r2_score(original_ytrain, train_predict))
-            print("Test data R2 score:", r2_score(original_ytest, test_predict))
-            
-            print("Train data MGD: ", mean_gamma_deviance(original_ytrain, train_predict))
-            print("Test data MGD: ", mean_gamma_deviance(original_ytest, test_predict))
-            print("----------------------------------------------------------------------")
-            print("Train data MPD: ", mean_poisson_deviance(original_ytrain, train_predict))
-            print("Test data MPD: ", mean_poisson_deviance(original_ytest, test_predict))
+            # Evaluation metrices RMSE and accuracy
+            print("Test data RMSE: ", math.sqrt(mean_squared_error(original_ytest,test_predict)))       
+            print(f'Test data accuracy: {round(accuracy, 2)}%') 
+
         
-        
+        accuracy (train_predict, test_predict)
         look_back=self.K
         trainPredictPlot = np.empty_like(self.df)
         trainPredictPlot[:, :] = np.nan
@@ -187,10 +171,7 @@ class KNN() :
 
         last_original_days_value[0:time_step+1] = self.scaler.inverse_transform(self.df[len(self.df)-time_step:]).reshape(1,-1).tolist()[0]
         next_predicted_days_value[time_step+1:] = self.scaler.inverse_transform(np.array(lst_output).reshape(-1,1)).reshape(1,-1).tolist()[0]
-
-        new_pred_plot = pd.DataFrame({'last_original_days_value':last_original_days_value, 'next_predicted_days_value':next_predicted_days_value})
-
-        
+      
         
 
         last_date = self.stock['date'].values[-1]
@@ -205,7 +186,7 @@ class KNN() :
         
         plt.figure(figsize=(12,5))
         sns.set_style("ticks")
-        sns.lineplot(data=plotdf,x="date",y='close_price', label='next_predicted_days_value')
+        sns.lineplot(data=plotdf,x="date",y='close_price', label='future_value')
         
         
         sns.despine()
