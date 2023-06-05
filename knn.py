@@ -11,6 +11,10 @@ import plotly.graph_objects as go
 import plotly.express as px
 from itertools import cycle
 
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
+import datetime
+
 obj = getData
 data = obj.get_stock_data(obj, '2330', '2022-01-01', '2023-05-30')
 
@@ -126,29 +130,22 @@ class KNN() :
                       'train_predicted_close': trainPredictPlot.reshape(1,-1)[0].tolist(),
                       'test_predicted_close': testPredictPlot.reshape(1,-1)[0].tolist()})
 
-        fig = px.line(plotdf,x=plotdf['date'], y=[plotdf['original_close'],plotdf['train_predicted_close'],
-                                          plotdf['test_predicted_close']],
-              labels={'value':'Stock price','date': 'Date'})
-        fig.update_layout(title_text='Comparision between original close price vs predicted close price',
-                  plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Close Price')
-        fig.for_each_trace(lambda t:  t.update(name = next(names)))
-
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=False)
-        fig.show()
+        plt.figure(figsize=(12,5))
+        sns.set_style("ticks")
+        sns.lineplot(data=plotdf,x="date",y='original_close',color='red', label='original_close')
+        sns.lineplot(data=plotdf,x="date",y='train_predicted_close',color='green', label='train_predicted_close')
+        sns.lineplot(data=plotdf,x="date",y='test_predicted_close',color='blue', label='test_predicted_close')
         
+        sns.despine()
+        plt.title("The Stock Price of TSMC",size='x-large',color='blue')
+        plt.show()
         
         
     def predict(self, pred_days):
-        
-        
         time_step = self.K
-        # use last n days to predict m days stock prices
-        x_input=self.test_data[len(self.test_data)- time_step:].reshape(1,-1) # slice and normalize
+        x_input=self.test_data[len(self.test_data)- time_step:].reshape(1,-1)
         temp_input=list(x_input)
         temp_input=temp_input[0].tolist()
-        
-        
         
         lst_output=[]
         i=0
@@ -156,8 +153,7 @@ class KNN() :
         while(i<pred_days):
     
             if(len(temp_input)>time_step):
-                
-                
+        
                 x_input=np.array(temp_input[1:])
                 #print("{} day input {}".format(i,x_input))
                 x_input=x_input.reshape(1,-1)
@@ -171,8 +167,9 @@ class KNN() :
                 i=i+1
         
             else:
-                
                 yhat = self.neighbor.predict(x_input)
+        
+                temp_input.extend(yhat.tolist())
                 lst_output.extend(yhat.tolist())
         
                 i=i+1
@@ -193,33 +190,27 @@ class KNN() :
 
         new_pred_plot = pd.DataFrame({'last_original_days_value':last_original_days_value, 'next_predicted_days_value':next_predicted_days_value})
 
-        names = cycle(['Last 15 days close price','Predicted next 10 days close price'])    
-
-        fig = px.line(new_pred_plot,x=new_pred_plot.index, y=[new_pred_plot['last_original_days_value'],
-                                                      new_pred_plot['next_predicted_days_value']],
-                    labels={'value': 'Stock price','index': 'Timestamp'})
-        fig.update_layout(title_text='Compare last 15 days vs next 10 days',
-                  plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Close Price')
-        fig.for_each_trace(lambda t:  t.update(name = next(names)))
-
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=False)
-        fig.show()
         
-        knndf=self.df.tolist()
-        knndf.extend((np.array(lst_output).reshape(-1,1)).tolist())
-        knndf=self.scaler.inverse_transform(knndf).reshape(1,-1).tolist()[0]
+        
 
-        names = cycle(['Close price'])
-
-        fig = px.line(knndf,labels={'value': 'Stock price','index': 'Timestamp'})
-        fig.update_layout(title_text='Plotting whole closing stock price with prediction',
-                        plot_bgcolor='white', font_size=15, font_color='black',legend_title_text='Stock')
-        fig.for_each_trace(lambda t:  t.update(name = next(names)))
-
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=False)
-        fig.show()
+        last_date = self.stock['date'].values[-1]
+        
+        next_date = pd.to_datetime(last_date) + pd.DateOffset(days=1)
+        new_dates = pd.date_range(start=next_date, periods=pred_days, freq='B')
+        future = pd.to_datetime(new_dates)
+        
+        plotdf = pd.DataFrame({'close_price':next_predicted_days_value[time_step + 1:]})
+        plotdf['date'] = future
+        print(plotdf)
+        
+        plt.figure(figsize=(12,5))
+        sns.set_style("ticks")
+        sns.lineplot(data=plotdf,x="date",y='close_price', label='next_predicted_days_value')
+        
+        
+        sns.despine()
+        plt.title("The Stock Price of TSMC",size='x-large',color='blue')
+        plt.show()
        
        
        
