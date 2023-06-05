@@ -4,12 +4,9 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler 
 import matplotlib.pyplot as plt
 from tensorflow import keras
-from datetime import date
-from datetime import timedelta
+import datetime
 
-from FinMind.data import DataLoader
-
-keras.utils.set_random_seed(12345)
+keras.utils.set_random_seed(35)
 
 class Lstm():
   def __init__(self):
@@ -90,12 +87,11 @@ class Lstm():
   def predict(self, days):
     predictions = []
     fdate = []
-    day = date.today()
-    print(day)
+    day = datetime.datetime(2023, 5, 30)
     for _ in range(1, days+1):
-      day += timedelta(1)
+      day += datetime.timedelta(1)
       if day.weekday() == 5:
-        day += timedelta(2)
+        day += datetime.timedelta(2)
       fdate.append(day)
       predict_data = []
       predict_data.append(self.scaled_data[len(self.scaled_data)-self.window_size:, 0])
@@ -110,9 +106,8 @@ class Lstm():
       self.update_scaled_data()
     
     result = pd.DataFrame(predictions, index=fdate) 
-    plt.figure(figsize=(16,8))
     plt.xlabel('Date')
-    plt.ylabel('Close Price')
+    plt.ylabel('Closed')
     plt.plot(result)
     plt.show()
     return result
