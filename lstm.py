@@ -4,12 +4,9 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler 
 import matplotlib.pyplot as plt
 from tensorflow import keras
-from datetime import date
-from datetime import timedelta
+import datetime
 
-from FinMind.data import DataLoader
-
-keras.utils.set_random_seed(12345)
+keras.utils.set_random_seed(35)
 
 class Lstm():
   def __init__(self):
@@ -22,7 +19,7 @@ class Lstm():
   # Train the LSTM model
   def train(self, close_prices):
     self.close_prices = close_prices
-    x_train, y_train, x_test, y_test, training_data_len = self.split_data()
+    x_train, y_train, x_test, y_test = self.split_data()
 
     x_train, y_train = np.array(x_train), np.array(y_train)
     x_train = np.reshape(x_train, (x_train.shape[0], x_train.shape[1], 1))
@@ -78,18 +75,17 @@ class Lstm():
     for i in range(self.window_size, len(test_data)):
       x_test.append(test_data[i-self.window_size:i, 0])
     
-    return x_train, y_train, x_test, y_test, training_data_len
+    return x_train, y_train, x_test, y_test
    
   # predict the future stock price  
   def predict(self, days):
     predictions = []
     fdate = []
-    day = date.today()
-    print(day)
+    day = datetime.datetime(2023, 5, 30)
     for _ in range(1, days+1):
-      day += timedelta(1)
+      day += datetime.timedelta(1)
       if day.weekday() == 5:
-        day += timedelta(2)
+        day += datetime.timedelta(2)
       fdate.append(day)
       predict_data = []
       predict_data.append(self.scaled_data[len(self.scaled_data)-self.window_size:, 0])
@@ -104,9 +100,8 @@ class Lstm():
       self.update_scaled_data()
     
     result = pd.DataFrame(predictions, index=fdate) 
-    plt.figure(figsize=(16,8))
     plt.xlabel('Date')
-    plt.ylabel('Close Price')
+    plt.ylabel('Closed')
     plt.plot(result)
     plt.show()
     return result
