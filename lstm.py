@@ -40,20 +40,6 @@ class Lstm():
     predictions = self.model.predict(x_test)
     predictions = self.scaler.inverse_transform(predictions)
     rmse, accuracy = self.analyze(predictions, y_test)
-
-    # plot the result of test data
-    data = data_df.filter(['close'])
-    train = data[:training_data_len]
-    validation = data[training_data_len:]
-    validation['Predictions'] = predictions
-    plt.figure(figsize=(16,8))
-    plt.title('Model')
-    plt.xlabel('Date')
-    plt.ylabel('Close Price')
-    plt.plot(train)
-    plt.plot(validation[['close', 'Predictions']])
-    plt.legend(['Real', 'Train', 'Val', 'Predictions'], loc='lower right')
-    plt.show()
     
     return rmse, accuracy
 
@@ -119,6 +105,8 @@ class Lstm():
     
     result = pd.DataFrame(predictions, index=fdate) 
     plt.figure(figsize=(16,8))
+    plt.xlabel('Date')
+    plt.ylabel('Close Price')
     plt.plot(result)
     plt.show()
     return result
