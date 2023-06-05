@@ -39,10 +39,10 @@ def define_xy(window_size, train_data):
     return x, y
 
 def split_test_train(test_days, x, y):
-    x_train = x[-test_days:]
-    x_test = x[:-test_days]
-    y_train = y[-test_days:]
-    y_test = y[:-test_days]
+    x_test = x[-test_days:]
+    x_train = x[:-test_days]
+    y_test = y[-test_days:]
+    y_train = y[:-test_days]
 
     return x_train, x_test, y_train, y_test
 
@@ -108,28 +108,29 @@ def create_prediction_with_date(new_data, predict_days, last_date):
 
 def plot(real, exist_predict, new_predict):
     plt.figure(figsize=(16,8))
-    plt.plot(real.iloc[:-test_days, 'date'], real.iloc[:-test_days, 'close'], label='real_train')
-    plt.plot(real.iloc[-test_days:, 'date'], real.iloc[-test_days:, 'close'], label='real_test')
-    plt.plot(exist_predict.iloc[:-test_days, 'date'], exist_predict.iloc[:-test_days, 'close'], label='predict_train')
-    plt.plot(exist_predict.iloc[-test_days:, 'date'], exist_predict.iloc[-test_days:, 'close'], label='predict_test')
-    plt.plot(new_predict['date'], new_predict['close'], label='new predict')
+    plt.plot(real.iloc[:-test_days, 1], real.iloc[:-test_days, 5], label='real_train')
+    plt.plot(real.iloc[-test_days:, 1], real.iloc[-test_days:, 5], label='real_test')
+    plt.plot(exist_predict.iloc[:-test_days, 1], exist_predict.iloc[:-test_days, 5], label='predict_train')
+    plt.plot(exist_predict.iloc[-test_days:, 1], exist_predict.iloc[-test_days:, 5], label='predict_test')
+    plt.plot(new_predict.loc['date'], new_predict.loc['close'], label='new predict')
     plt.xlabel('Date')
     plt.ylabel('Close Price')
     plt.legend()
     plt.show()
 
-
 # 以下是main
 data_df = getdata_df(data_file_name)
 print("len of data_df:", len(data_df))
-test_days = int(len(data_df)*split_rate)
+train_days = int((len(data_df)-window_size)*split_rate)
+test_days = len(data_df)-window_size-train_days
+print("test_days:",test_days)
 x, y = define_xy(window_size, data_df)
 # x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.25,  random_state=0)
 x_train, x_test, y_train, y_test = split_test_train(test_days, x, y)
 print('param tuning...')
 # model = hyperparameter_tuning(x_train, y_train) #240個參數tune超久==，得到一次後就自己填:D
 model = RandomForestRegressor(random_state= 2,
-                            n_estimators= 100,
+                            n_estimators= 1000,
                             min_samples_split= 2, 
                             min_samples_leaf= 3, 
                             max_depth= 8, 
@@ -150,12 +151,23 @@ print(last_date)
 predict_newday = create_prediction_with_date(predict_newday, predict_days, last_date)
 print(predict_newday)
 """
-#下面在畫圖
-all_predict = model.predict(x)
-print("check len:",len(all_predict), " ",len(data_df)-window_size)
-print(data_df.iloc[window_size:,'date'])
-all_predict['date'] = list(data_df.iloc[window_size:,'date'])
-all_real = y
-all_real['date'] = data_df.iloc[window_size:,'date']
+#下面在畫圖，失敗的畫圖所以沒用到
+print(predict_x_test, len(predict_x_test))
+print(predict_x_train, len(predict_x_train))
+all_real = data_df.iloc[window_size:, [1]+list(range(5,9))]
+print(all_real)
+all_predict = all_real
+for i in range(len(data_df)-window_size-test_days):
+    for j in range(4):
+        all_predict.iloc[i, j+1] = predict_x_train[i][j]
+for i in range(test_days):
+    for j in range(4):
+        all_predict.iloc[i+len(data_df)-window_size-test_days, j+1] = predict_x_test[i][j]
+
+print("all_predict:\n", all_predict)
 plot(all_real, all_predict, predict_newday)
 """
+plt.figure(figsize=(16,8))
+plt.plot(predict_newday['date'], predict_newday['close'], label='new day predict')
+plt.legend()
+plt.show()
