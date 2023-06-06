@@ -104,7 +104,9 @@ train_days = int((len(data_df)-window_size)*split_rate)
 test_days = len(data_df)-window_size-train_days
 x, y = define_xy(window_size, data_df)
 x_train, x_test, y_train, y_test = split_test_train(test_days, x, y)
-#model = hyperparameter_tuning(x_train, y_train) #just tunning once, and set the best_parameter
+# model = hyperparameter_tuning(x_train, y_train) 
+# Tuning taking up a significant amount of time. 
+# below is the best param of our model
 model = RandomForestRegressor(random_state= 2,
                             n_estimators= 500,
                             min_samples_split= 2, 
