@@ -113,9 +113,9 @@ model = RandomForestRegressor(random_state= 2,
                             bootstrap= True)
 
 model.fit(x_train, y_train)
-predict_x_test = model.predict(x_test)
-score(predict_x_test, y_test, 'Test Data')
 predict_x_train = model.predict(x_train)
 score(predict_x_train, y_train, 'Train Data')
+predict_x_test = model.predict(x_test)
+score(predict_x_test, y_test, 'Test Data')
 predict_newday = prediction(predict_days, model, data_df.iloc[:, 5:9], window_size, data_df)
 plot(x=predict_newday['date'], y=predict_newday['close'], label='new day predict')
