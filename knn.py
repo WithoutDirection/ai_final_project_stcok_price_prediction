@@ -184,6 +184,10 @@ class KNN() :
         plotdf['date'] = future
         # print(plotdf)
         
+        for i in range(pred_days):
+            
+            print(plotdf['date'][i], plotdf['close_price'][i])
+        
         plt.figure(figsize=(12,5))
         sns.set_style("ticks")
         sns.lineplot(data=plotdf,x="date",y='close_price', label='future_value')
