@@ -195,10 +195,10 @@ class KNN() :
        
        
        
-k_means = KNN(15)
-k_means.extract('close')
-k_means.normalize()
-k_means.split(0.8)
-k_means.train()
-k_means.predict(14)
+KNN = KNN()
+KNN.extract()
+KNN.normalize()
+KNN.split()
+KNN.train()
+KNN.predict(14)
 
