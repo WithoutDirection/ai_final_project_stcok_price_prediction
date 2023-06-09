@@ -19,4 +19,8 @@
 * LSTM implement
 
 ## seting workship
-* VS code remotely update github 
+* pip install -r requirements.txt
+
+## Result
+* for KNN:
+![image](KNN_1.png)
