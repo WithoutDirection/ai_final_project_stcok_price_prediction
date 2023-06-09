@@ -22,5 +22,12 @@
 * pip install -r requirements.txt
 
 ## Result
-* for KNN:
-![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/KNN_1.png)
+* the prediction made by KNN:
+![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/KNN_2.png)
+* the prediction made by LSTM:
+![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/LSTM_1.png)
+* the prediction made by RandomForest using 1 feature:
+![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/random_forest_1.png)
+* the prediction made by RandomForest using 4 features:
+![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/random_forest_2.png)
+
