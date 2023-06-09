@@ -1,0 +1,11 @@
+plotly==5.14.1
+pandas==2.0.1
+FinMind==1.6.0
+scikit-learn==1.2.2
+numpy==1.23.5
+matplotlib==3.7.1
+more-itertools==9.1.0
+seaborn==0.12.2
+tensorflow==2.12.0
+datetime==5.1
+
