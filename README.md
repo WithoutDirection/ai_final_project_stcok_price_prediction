@@ -23,4 +23,4 @@
 
 ## Result
 * for KNN:
-![image](KNN_1.png)
+![image](https://github.com/aswe-without/ai_final_project_stcok_price_prediction/blob/main/figure/KNN_1.png)
